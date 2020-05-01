@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Rule>
+  <rankRule>
+    <rankFloor>2</rankFloor>
+    <rankCeil>5</rankCeil>
+  </rankRule>
+
+  <wordRule>
+    <word>抽卡机</word>
+    
+  </wordRule>
+  
+</Rule>

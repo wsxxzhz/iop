@@ -17,15 +17,16 @@ namespace com.girlsfrontline.demo.Code
         {
             int gunInArmoy;
             int rand;
+            Filter filter = new Filter("F:\\CoolQAir\\dev\\com.girlsfrontline.demo\\filterRule.xml");
             CharacterLoder characterLoder = new CharacterLoder("F:\\CoolQAir\\dev\\com.girlsfrontline.demo\\Guns.xml");
             gunInArmoy = characterLoder.NumOfCharacter();
 
             if (e.Message.Text.StartsWith("添加卡片"))
             {
                 //添加卡片 姓名 星级 留言
-                
-                if(Regex.IsMatch(CQApi.CQDeCode(e.Message.Text),
-                    @"^\w+\s[a-zA-z0-9()\-[!.\u4E00-\u9FA5]+\s\d\s[a-zA-z0-9()\-[!.\u4E00-\u9FA5]") ==false)
+
+                if (Regex.IsMatch(CQApi.CQDeCode(e.Message.Text),
+                    @"^\w+\s[a-zA-z0-9()\-[!.\u4E00-\u9FA5]+\s\d\s[a-zA-z0-9()\-[!.\u4E00-\u9FA5]") == false || filter.Wordfilter(e.Message.Text)==false)
                 {
                     e.FromGroup.SendGroupMessage("加入失败");
                     return;
@@ -44,7 +45,9 @@ namespace com.girlsfrontline.demo.Code
                 string rank = info[2];
                 string message = info[3];
 
-                if(characterLoder.AddCard(name, rank, message) && (int.Parse(rank) <= 5 || int.Parse(rank) >= 2))
+
+
+                if(characterLoder.AddCard(name, rank, message) && filter.Rankfilter(rank))
                 {
                     e.FromGroup.SendGroupMessage("加入成功");
                 }

@@ -28,34 +28,6 @@ namespace com.girlsfrontline.demo.Code
             return root.Elements().Count();
         }
 
-        /*
-         public string gunName(int id)
-        {
-            XDocument gunList = XDocument.Load(FilePath);
-            XElement root = gunList.Element("armory");
-            IEnumerable<XElement> gunEnum = root.Elements();
-
-            foreach(XElement ele in gunEnum)
-            {
-                if(ele.Attribute("id").Value==id.ToString())
-                {
-                    IEnumerable<XElement> desEnum = ele.Elements();
-
-                    foreach(XElement e in desEnum)
-                    {
-                        if(e.Name=="name")
-                        {
-                            return e.Value;
-                        }
-                    }
-                }
-            }
-
-            return "ERROR";
-        }
-
-        */
-
         public string Reader(int id, string name)
         {
             XDocument gunList = XDocument.Load(FilePath);
