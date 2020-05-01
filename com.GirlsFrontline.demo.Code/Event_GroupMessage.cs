@@ -3,6 +3,7 @@ using Native.Sdk.Cqp.Interface;
 using Native.Sdk.Cqp.Model;
 using Native.Sdk.Cqp;
 using System.Text.RegularExpressions;
+using Native.Sdk.Cqp.Enum;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,9 +80,12 @@ namespace com.girlsfrontline.demo.Code
 
             }
 
-            if (e.Message.Text.Equals("实验抽卡"))
+            if (e.Message.Text.Equals("读取数据"))
             {
-                e.FromGroup.SendGroupMessage(characterLoder.CharacterName(57));
+                e.FromGroup.SendGroupMessage("获取：",
+                    e.FromGroup.GetGroupMemberInfo(1256893006).Nick
+                    );
+
             }
 
             if (e.Message.Text == "我的卡牌")
@@ -132,6 +136,62 @@ namespace com.girlsfrontline.demo.Code
 
             }
 
+            if(e.Message.Text.StartsWith("发起对战"))
+            {
+                GroupMemberInfo playerinfo = e.FromGroup.GetGroupMemberInfo(e.FromQQ.Id);
+                string playername = playerinfo.Nick;
+                
+                DarwinGame darwinGame = new DarwinGame("F:\\CoolQAir\\dev\\com.girlsfrontline.demo\\UserInfo.xml",
+                    "F:\\CoolQAir\\dev\\com.girlsfrontline.demo\\Guns.xml");
+
+                string rivalqq="N/A";
+
+                foreach(var cqcode in e.Message.CQCodes.FindAll(c => c.Function == CQFunction.At))
+                {
+                    foreach(var item in cqcode.Items)
+                    {
+                        rivalqq = item.Value;
+                    }
+                }
+
+                if(rivalqq=="N/A")
+                {
+                    e.FromGroup.SendGroupMessage("请重新@你的对手");
+                    return;
+                }
+                //GroupMemberInfo rivalinfo = e.FromGroup.GetGroupMemberInfo(long.Parse(rivalqq));
+
+                GroupMemberInfo rivalinfo = e.FromGroup.GetGroupMemberInfo(long.Parse(rivalqq));
+                
+                string rivalname = rivalinfo.Nick;
+
+                if(darwinGame.IsPlayer(e.FromQQ.Id.ToString())==false
+                    ||darwinGame.IsPlayer(rivalqq)==false 
+                    ||e.FromQQ.Id.ToString()==rivalqq
+                    ||CQApi.CQCode_At(e.CQApi.GetLoginQQ()).ToString()==rivalqq)
+                {
+                    e.FromGroup.SendGroupMessage("对战不成立");
+                    return;
+                }
+
+                e.FromGroup.SendGroupMessage(playername , "与" + rivalname , "开始对战！");
+
+                if(darwinGame.fight(e.FromQQ.Id.ToString(),rivalqq)==3)
+                {
+                    e.FromGroup.SendGroupMessage("平局");
+                    return;
+                }
+                else if(darwinGame.fight(e.FromQQ.Id.ToString(), rivalqq) == 1)
+                {
+                    e.FromGroup.SendGroupMessage(playername, "获胜");
+                }
+                else if (darwinGame.fight(e.FromQQ.Id.ToString(), rivalqq) == 2)
+                {
+                    e.FromGroup.SendGroupMessage(rivalname, "获胜");
+                }
+            }
+
+
             if (e.Message.Text.Contains(CQApi.CQCode_At(e.CQApi.GetLoginQQ()).ToString()))
             {
                 e.FromGroup.SendGroupMessage("使用格式：\n" +
@@ -142,7 +202,8 @@ namespace com.girlsfrontline.demo.Code
                     "星级范围2-5\n"+
                     "[我的卡牌] 查看拥有的卡牌\n" +
                     "[删除卡牌 名称]删除卡片\n" +
-                    "例如：删除卡牌 抽卡机");
+                    "例如：删除卡牌 抽卡机\n" +
+                    "[发起对战 @某人]向某人发起对战\n");
             }
 
         }

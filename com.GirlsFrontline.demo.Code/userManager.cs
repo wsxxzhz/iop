@@ -15,6 +15,15 @@ namespace com.girlsfrontline.demo.Code
             this.filePath = filePath;
         }
 
+        public string UserId(string name)
+        {
+            XDocument doc = XDocument.Load(filePath);
+            XElement root = doc.Element("Userlist");
+
+
+
+            return "ERROR";
+        }
         public int DeleteCardById(string id,string user)
         {
             XDocument doc = XDocument.Load(filePath);

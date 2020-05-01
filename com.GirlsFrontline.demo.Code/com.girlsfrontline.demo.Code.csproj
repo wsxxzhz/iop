@@ -62,6 +62,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CharacterRandom.cs" />
+    <Compile Include="DarwinGame.cs" />
     <Compile Include="Event_GroupMessage.cs" />
     <Compile Include="filter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
