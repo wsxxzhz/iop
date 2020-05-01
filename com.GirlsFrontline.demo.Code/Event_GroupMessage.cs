@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml;
+using System.Xml.Linq;
 namespace com.girlsfrontline.demo.Code
 {
     public class Event_GroupMessage : IGroupMessage
@@ -17,6 +17,7 @@ namespace com.girlsfrontline.demo.Code
         {
             int gunInArmoy;
             int rand;
+            userManager userManager = new userManager("F:\\CoolQAir\\dev\\com.girlsfrontline.demo\\UserInfo.xml");
             Filter filter = new Filter("F:\\CoolQAir\\dev\\com.girlsfrontline.demo\\filterRule.xml");
             CharacterLoder characterLoder = new CharacterLoder("F:\\CoolQAir\\dev\\com.girlsfrontline.demo\\Guns.xml");
             gunInArmoy = characterLoder.NumOfCharacter();
@@ -26,16 +27,16 @@ namespace com.girlsfrontline.demo.Code
                 //添加卡片 姓名 星级 留言
 
                 if (Regex.IsMatch(CQApi.CQDeCode(e.Message.Text),
-                    @"^\w+\s[a-zA-z0-9()\-[!.\u4E00-\u9FA5]+\s\d\s[a-zA-z0-9()\-[!.\u4E00-\u9FA5]") == false || filter.Wordfilter(e.Message.Text)==false)
+                    @"^\w+\s[a-zA-z0-9()\-[!.\u4E00-\u9FA5]+\s\d\s[a-zA-z0-9()\-[!.\u4E00-\u9FA5]") == false || filter.Wordfilter(e.Message.Text) == false)
                 {
                     e.FromGroup.SendGroupMessage("加入失败");
                     return;
                 }
 
-                string[] info =CQApi.CQDeCode(e.Message.Text).Split(new char[] { ' ', ' ', ' ' });
-                foreach(string ele in info)
+                string[] info = CQApi.CQDeCode(e.Message.Text).Split(new char[] { ' ', ' ', ' ' });
+                foreach (string ele in info)
                 {
-                    if(ele==null)
+                    if (ele == null)
                     {
                         return;
                     }
@@ -45,9 +46,7 @@ namespace com.girlsfrontline.demo.Code
                 string rank = info[2];
                 string message = info[3];
 
-
-
-                if(characterLoder.AddCard(name, rank, message) && filter.Rankfilter(rank))
+                if (characterLoder.AddCard(name, rank, message) && filter.Rankfilter(rank))
                 {
                     e.FromGroup.SendGroupMessage("加入成功");
                 }
@@ -61,9 +60,14 @@ namespace com.girlsfrontline.demo.Code
             if (e.Message.Text.Equals("抽卡"))
             {
                 CharacterRandom characterrandom = new CharacterRandom();
+
                 rand = int.Parse(characterrandom.CardSelect(1, gunInArmoy, "F:\\CoolQAir\\dev\\com.girlsfrontline.demo\\Guns.xml"));
 
-                e.FromGroup.SendGroupMessage("池子存有人形数：",
+                
+                e.FromGroup.SendGroupMessage(
+                    "您是",
+                    e.FromQQ.Id,
+                    "\n池子存有人形数：",
                     gunInArmoy.ToString(),
                     "\n本次抽取到的人形是：\n",
                     characterLoder.CharacterName(rand),
@@ -71,13 +75,41 @@ namespace com.girlsfrontline.demo.Code
                     characterLoder.CharacterRank(rand),
                     "\n",
                     characterLoder.CharacterMsg(rand)
-                    );
+                    ); ;
+
+                userManager.AddCardToUser(rand, e.FromQQ.Id.ToString());
 
             }
 
-            if(e.Message.Text.Equals("实验抽卡"))
+            if (e.Message.Text.Equals("实验抽卡"))
             {
                 e.FromGroup.SendGroupMessage(characterLoder.CharacterName(57));
+            }
+
+            if (e.Message.Text == "我的卡牌")
+            {
+                StringBuilder ans = new StringBuilder();
+                XElement userinfo = userManager.CardOfUser(e.FromQQ.Id.ToString());
+
+                if(userinfo==null)
+                {
+                    e.FromGroup.SendGroupMessage("您暂无卡牌");
+                    return;
+                }
+
+                ans.Append("您拥有：");
+
+                foreach(XElement ele in userinfo.Elements())
+                {
+                    ans.Append(characterLoder.CharacterName(int.Parse(ele.Attribute("id").Value)));
+                    ans.Append(' ');
+                    ans.Append("数量：");
+                    ans.Append(ele.Element("num").Value);
+                    ans.Append("\n");
+                }
+
+                e.FromGroup.SendGroupMessage(ans);
+
             }
 
             if (e.Message.Text.Contains(CQApi.CQCode_At(e.CQApi.GetLoginQQ()).ToString()))
