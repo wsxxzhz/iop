@@ -15,6 +15,45 @@ namespace com.girlsfrontline.demo.Code
             this.filePath = filePath;
         }
 
+        public int DeleteCardById(string id,string user)
+        {
+            XDocument doc = XDocument.Load(filePath);
+            XElement root = doc.Element("Userlist");
+
+            XElement keyid = null;
+            XElement keyuser = null;
+
+            foreach(XElement ele in root.Elements())
+            {
+                if(ele.Attribute("qq").Value==user)
+                {
+                    keyuser = ele;
+                }
+            }
+
+            if(keyuser==null)
+            {
+                return 0; //查无此人
+            }
+
+            foreach(XElement ele in keyuser.Elements())
+            {
+                if(ele.Attribute("id").Value==id)
+                {
+                    keyid = ele;
+                }
+            }
+
+            if(keyid==null)
+            {
+                return 1; //查无此卡
+            }
+
+            keyid.Remove();
+            doc.Save(filePath);
+            return 2;
+        }
+
         public XElement CardOfUser(string qq)
         {
             XDocument doc = XDocument.Load(filePath);

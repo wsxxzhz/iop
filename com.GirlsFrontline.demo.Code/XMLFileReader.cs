@@ -70,6 +70,22 @@ namespace com.girlsfrontline.demo.Code
             return XMLFileReader.Reader(id, "rank");
         }
 
+        public string CharacterId(string name)
+        {
+            XDocument doc = XDocument.Load(filePath);
+            XElement root = doc.Element("armory");
+
+            foreach(XElement ele in root.Descendants())
+            {
+                if(ele.Name=="name" && ele.Value==name)
+                {
+                    return ele.Parent.Attribute("id").Value;
+                }
+            }
+
+            return "ERROR";
+        }
+
         public string CharacterMsg(int id)
         {
             XMLFileReader XFR = new XMLFileReader(filePath);

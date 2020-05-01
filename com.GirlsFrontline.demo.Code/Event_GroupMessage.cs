@@ -22,7 +22,7 @@ namespace com.girlsfrontline.demo.Code
             CharacterLoder characterLoder = new CharacterLoder("F:\\CoolQAir\\dev\\com.girlsfrontline.demo\\Guns.xml");
             gunInArmoy = characterLoder.NumOfCharacter();
 
-            if (e.Message.Text.StartsWith("添加卡片"))
+            if (e.Message.Text.StartsWith("添加卡牌"))
             {
                 //添加卡片 姓名 星级 留言
 
@@ -65,9 +65,7 @@ namespace com.girlsfrontline.demo.Code
 
                 
                 e.FromGroup.SendGroupMessage(
-                    "您是",
-                    e.FromQQ.Id,
-                    "\n池子存有人形数：",
+                    "池子存有人形数：",
                     gunInArmoy.ToString(),
                     "\n本次抽取到的人形是：\n",
                     characterLoder.CharacterName(rand),
@@ -91,7 +89,7 @@ namespace com.girlsfrontline.demo.Code
                 StringBuilder ans = new StringBuilder();
                 XElement userinfo = userManager.CardOfUser(e.FromQQ.Id.ToString());
 
-                if(userinfo==null)
+                if(userinfo==null ||userinfo.Elements().Count()==0)
                 {
                     e.FromGroup.SendGroupMessage("您暂无卡牌");
                     return;
@@ -112,14 +110,39 @@ namespace com.girlsfrontline.demo.Code
 
             }
 
+            if(e.Message.Text.StartsWith("删除卡牌"))
+            {
+                int start= CQApi.CQDeCode(e.Message.Text).IndexOf(' ');
+                string name = CQApi.CQDeCode(e.Message.Text).Substring(start+1);
+                int flag=
+                    userManager.DeleteCardById(characterLoder.CharacterId(name), e.FromQQ.Id.ToString());
+
+                switch (flag)
+                {
+                    case 0:
+                        e.FromGroup.SendGroupMessage("你现在空无一卡");
+                        return;
+                    case 1:
+                        e.FromGroup.SendGroupMessage("你没有这张卡");
+                        return;
+                    case 2:
+                        e.FromGroup.SendGroupMessage("删除成功");
+                        return;
+                }
+
+            }
+
             if (e.Message.Text.Contains(CQApi.CQCode_At(e.CQApi.GetLoginQQ()).ToString()))
             {
                 e.FromGroup.SendGroupMessage("使用格式：\n" +
                     "[抽卡] 抽取一张卡片\n" +
-                    "[添加卡片 名称 星级 留言]将卡片放入池子" +
-                    "例如：添加卡片 [MG]绍沙 4 您就是这里的指挥官吗？那么，绍沙M1915，向您报到。\n" +
+                    "[添加卡片 名称 星级 留言]将卡片放入池子\n" +
+                    "例如：\n" +
+                    "添加卡片 绍沙 4 绍沙M1915，向您报到。\n" +
                     "星级范围2-5\n"+
-                    "不要添加令人疑惑的信息，qqqxx");
+                    "[我的卡牌] 查看拥有的卡牌\n" +
+                    "[删除卡牌 名称]删除卡片\n" +
+                    "例如：删除卡牌 抽卡机");
             }
 
         }
