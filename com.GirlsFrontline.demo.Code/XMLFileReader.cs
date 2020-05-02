@@ -64,6 +64,16 @@ namespace com.girlsfrontline.demo.Code
             this.filePath = filePath;
         }
 
+        public string CharacterAttack(int id)
+        {
+            XMLFileReader reader = new XMLFileReader(filePath);
+            if(id==0)
+            {
+                return "0";
+            }
+            return reader.Reader(id, "attack");
+        }
+
         public string CharacterRank(int id)
         {
             XMLFileReader XMLFileReader = new XMLFileReader(filePath);
@@ -98,7 +108,7 @@ namespace com.girlsfrontline.demo.Code
             return XFR.Reader(id, "name");
         }
 
-        public bool AddCard(string name, string rank, string message)
+        public int AddCard(string name, string rank, string message)
         {
             XDocument doc = XDocument.Load(filePath);
             IEnumerable<XElement> namelist = from ele in doc.Descendants()
@@ -107,7 +117,7 @@ namespace com.girlsfrontline.demo.Code
 
             if(namelist.Count()!=0)
             {
-                return false;
+                return 0;
             }
 
             XElement root = doc.Element("armory");
@@ -117,10 +127,15 @@ namespace com.girlsfrontline.demo.Code
             add.SetElementValue("rank", rank);
             add.SetElementValue("name", name);
             add.SetElementValue("message", message);
+
+            Random random = new Random();
+            int attack = random.Next(int.Parse(rank) * 1000, (int.Parse(rank) + 1) * 1000);
+            add.SetElementValue("attack",attack);
+
             root.Add(add);
             doc.Save(filePath);
 
-            return true;
+            return attack;
         }
 
         public IEnumerable<XElement> NodesWith(string name, int key)

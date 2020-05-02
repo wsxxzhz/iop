@@ -15,15 +15,22 @@ namespace com.girlsfrontline.demo.Code
             this.filePath = filePath;
         }
 
-        public string UserId(string name)
+        public string TeamAttack(string playerid)
         {
             XDocument doc = XDocument.Load(filePath);
             XElement root = doc.Element("Userlist");
 
-
+            foreach (var ele in root.Elements())
+            {
+                if (ele.Attribute("qq").Value == playerid)
+                {
+                    return ele.Element("team").Element("attack").Value;
+                }
+            }
 
             return "ERROR";
         }
+
         public int DeleteCardById(string id,string user)
         {
             XDocument doc = XDocument.Load(filePath);
@@ -45,7 +52,11 @@ namespace com.girlsfrontline.demo.Code
                 return 0; //查无此人
             }
 
-            foreach(XElement ele in keyuser.Elements())
+            IEnumerable<XElement> cards = from ele in keyuser.Elements()
+                                          where ele.Name == "card"
+                                          select ele;
+
+            foreach(XElement ele in cards)
             {
                 if(ele.Attribute("id").Value==id)
                 {
@@ -63,7 +74,35 @@ namespace com.girlsfrontline.demo.Code
             return 2;
         }
 
-        public XElement CardOfUser(string qq)
+        public IEnumerable<XElement> TeamOfUser(string qq)
+        {
+            XDocument doc = XDocument.Load(filePath);
+            XElement root = doc.Element("Userlist");
+
+            XElement ans = null;
+
+            foreach (XElement ele in root.Elements())
+            {
+                if (ele.Attribute("qq").Value == qq)
+                {
+                    ans = ele;
+                }
+            }
+
+            if (ans == null)
+            {
+                return null;
+            }
+
+
+            IEnumerable<XElement> members = from ele in ans.Element("team").Elements()
+                                            where ele.Name == "member"
+                                            select ele;
+
+            return members;
+        }
+
+        public IEnumerable<XElement> CardOfUser(string qq)
         {
             XDocument doc = XDocument.Load(filePath);
             XElement root = doc.Element("Userlist");
@@ -78,7 +117,16 @@ namespace com.girlsfrontline.demo.Code
                 }
             }
 
-            return ans;
+            if(ans==null)
+            {
+                return null;
+            }
+
+            IEnumerable<XElement> cards = from ele in ans.Elements()
+                                          where ele.Name == "card"
+                                          select ele;
+
+            return cards;
         }
 
         public void AddCardToUser(int id, string qq)
@@ -101,10 +149,23 @@ namespace com.girlsfrontline.demo.Code
             {
                 XElement user = new XElement("user");
                 XElement card = new XElement("card");
+                XElement team = new XElement("team");
                 user.SetAttributeValue("qq", qq);
+
                 card.SetAttributeValue("id", id);
                 card.SetElementValue("num", 1);
+
                 user.Add(card);
+
+                team.SetElementValue("attack", 0);
+                for(int i=0; i<5;i++)
+                {
+                    XElement mem = new XElement("member");
+                    mem.Value = "0";
+                    team.Add(mem);
+                }
+                user.Add(team);
+
                 root.Add(user);
                 doc.Save(filePath);
             }

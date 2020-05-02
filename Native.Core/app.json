@@ -147,6 +147,6 @@
 			//151, //置群添加请求       setGroupAddRequest
 			160, //取群成员列表       getGroupMemberList
 			161, //取群列表           getGroupList
-			162, //取好友列表         getFriendList
+			162 //取好友列表         getFriendList
 			//180 //撤回消息           deleteMsg
 		] }

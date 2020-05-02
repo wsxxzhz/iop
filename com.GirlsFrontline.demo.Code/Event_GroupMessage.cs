@@ -34,7 +34,7 @@ namespace com.girlsfrontline.demo.Code
                     return;
                 }
 
-                string[] info = CQApi.CQDeCode(e.Message.Text).Split(new char[] { ' ', ' ', ' ' });
+                string[] info = CQApi.CQDeCode(e.Message.Text).Split(new char[] { ' ' },options:StringSplitOptions.RemoveEmptyEntries);
                 foreach (string ele in info)
                 {
                     if (ele == null)
@@ -47,9 +47,11 @@ namespace com.girlsfrontline.demo.Code
                 string rank = info[2];
                 string message = info[3];
 
-                if (characterLoder.AddCard(name, rank, message) && filter.Rankfilter(rank))
+                int ans = characterLoder.AddCard(name, rank, message);
+
+                if (ans!=0 && filter.Rankfilter(rank))
                 {
-                    e.FromGroup.SendGroupMessage("加入成功");
+                    e.FromGroup.SendGroupMessage("加入成功，效能赋值：",ans);
                 }
                 else
                 {
@@ -73,7 +75,9 @@ namespace com.girlsfrontline.demo.Code
                     "\n星级：",
                     characterLoder.CharacterRank(rand),
                     "\n",
-                    characterLoder.CharacterMsg(rand)
+                    characterLoder.CharacterMsg(rand),
+                    "\n战斗效能：",
+                    characterLoder.CharacterAttack(rand)
                     ); ;
 
                 userManager.AddCardToUser(rand, e.FromQQ.Id.ToString());
@@ -88,10 +92,52 @@ namespace com.girlsfrontline.demo.Code
 
             }
 
+            if(e.Message.Text=="我的梯队")
+            {
+                DarwinGame darwinGame = new DarwinGame("F:\\CoolQAir\\dev\\com.girlsfrontline.demo\\UserInfo.xml",
+                    "F:\\CoolQAir\\dev\\com.girlsfrontline.demo\\Guns.xml");
+
+                if(darwinGame.IsPlayer(e.FromQQ.Id.ToString())==false)
+                {
+                    e.FromGroup.SendGroupMessage("玩家不存在");
+                    return;
+                }
+
+                StringBuilder ans = new StringBuilder();
+                IEnumerable<XElement> members = userManager.TeamOfUser(e.FromQQ.Id.ToString());
+
+                ans.Append("您的梯队：\n");
+
+                foreach(var ele in members)
+                {
+                    if(int.Parse(ele.Value)==0)
+                        {
+                        ans.Append("N/A");
+                    }
+                    else
+                    {
+                        ans.Append(characterLoder.CharacterName(int.Parse(ele.Value)));
+                        ans.Append(' ');
+                        ans.Append("等级");
+                        ans.Append(characterLoder.CharacterRank(int.Parse(ele.Value)));
+                        ans.Append(' ');
+                        ans.Append("战斗效能");
+                        ans.Append(characterLoder.CharacterAttack(int.Parse(ele.Value)));
+                    }
+
+                    ans.Append('\n');
+
+                }
+
+                ans.Append("战斗效能总和");
+                ans.Append(userManager.TeamAttack(e.FromQQ.Id.ToString()));
+                e.FromGroup.SendGroupMessage(ans);
+            }
+
             if (e.Message.Text == "我的卡牌")
             {
                 StringBuilder ans = new StringBuilder();
-                XElement userinfo = userManager.CardOfUser(e.FromQQ.Id.ToString());
+                IEnumerable<XElement> userinfo = userManager.CardOfUser(e.FromQQ.Id.ToString());
 
                 if(userinfo==null ||userinfo.Elements().Count()==0)
                 {
@@ -99,13 +145,22 @@ namespace com.girlsfrontline.demo.Code
                     return;
                 }
 
-                ans.Append("您拥有：");
+                ans.Append("您拥有：\n");
 
-                foreach(XElement ele in userinfo.Elements())
+                foreach(XElement ele in userinfo)
                 {
+                    ans.Append("ID: ");
+                    ans.Append(ele.Attribute("id").Value);
+                    ans.Append(' ');
                     ans.Append(characterLoder.CharacterName(int.Parse(ele.Attribute("id").Value)));
                     ans.Append(' ');
-                    ans.Append("数量：");
+                    ans.Append("等级");
+                    ans.Append(characterLoder.CharacterRank(int.Parse(ele.Attribute("id").Value)));
+                    ans.Append(' ');
+                    ans.Append("战斗效能");
+                    ans.Append(characterLoder.CharacterAttack(int.Parse(ele.Attribute("id").Value)));
+                    ans.Append(' ');
+                    ans.Append("数量");
                     ans.Append(ele.Element("num").Value);
                     ans.Append("\n");
                 }
@@ -117,9 +172,9 @@ namespace com.girlsfrontline.demo.Code
             if(e.Message.Text.StartsWith("删除卡牌"))
             {
                 int start= CQApi.CQDeCode(e.Message.Text).IndexOf(' ');
-                string name = CQApi.CQDeCode(e.Message.Text).Substring(start+1);
+                string id = CQApi.CQDeCode(e.Message.Text).Substring(start+1);
                 int flag=
-                    userManager.DeleteCardById(characterLoder.CharacterId(name), e.FromQQ.Id.ToString());
+                    userManager.DeleteCardById(id, e.FromQQ.Id.ToString());
 
                 switch (flag)
                 {
@@ -175,22 +230,80 @@ namespace com.girlsfrontline.demo.Code
                 }
 
                 e.FromGroup.SendGroupMessage(playername , "与" + rivalname , "开始对战！");
+                int result = darwinGame.fight(e.FromQQ.Id.ToString(), rivalqq);
 
-                if(darwinGame.fight(e.FromQQ.Id.ToString(),rivalqq)==3)
+                if (result == 3)
                 {
                     e.FromGroup.SendGroupMessage("平局");
-                    return;
                 }
-                else if(darwinGame.fight(e.FromQQ.Id.ToString(), rivalqq) == 1)
+                else if(result  == 1)
                 {
                     e.FromGroup.SendGroupMessage(playername, "获胜");
                 }
-                else if (darwinGame.fight(e.FromQQ.Id.ToString(), rivalqq) == 2)
+                else if (result == 2)
                 {
                     e.FromGroup.SendGroupMessage(rivalname, "获胜");
                 }
             }
 
+            if(e.Message.Text.StartsWith("设置梯队"))
+            {
+                int[] id = {0,0,0,0,0 };
+                char[] space = { ' ' };
+                string[] res = e.Message.Text.Split(space, options: StringSplitOptions.RemoveEmptyEntries);
+                
+                if(res.Length>6)
+                {
+                    e.FromGroup.SendGroupMessage("最多只能容许5个成员");
+                    return;
+                }
+
+                for(int i=1;i<res.Length;i++)
+                {
+                    for(int j=i+1;j<res.Length;j++)
+                    {
+                        if(res[i]==res[j])
+                        {
+                            e.FromGroup.SendGroupMessage("一个队伍中不能有重复角色");
+                            return;
+                        }
+                    }
+                }
+
+                for(int i=1;i<res.Length;i++)
+                {
+                    id[i-1] = int.Parse(res[i]);
+                }
+
+                foreach(var item in id)
+                {
+                    if(item<0 || item>characterLoder.NumOfCharacter())
+                    {
+                        e.FromGroup.SendGroupMessage("存在非法id");
+                        return;
+                    }
+                }
+
+                DarwinGame darwinGame = new DarwinGame("F:\\CoolQAir\\dev\\com.girlsfrontline.demo\\UserInfo.xml", 
+                    "F:\\CoolQAir\\dev\\com.girlsfrontline.demo\\Guns.xml");
+
+                switch(darwinGame.SetMemder(e.FromQQ.Id.ToString(), id))
+                {
+                    case 0:
+                        e.FromGroup.SendGroupMessage("玩家不存在");
+                        return;
+                    case 1:
+                        e.FromGroup.SendGroupMessage("设置的卡牌中有不存在的卡牌");
+                        return;
+                    case 2:
+                        StringBuilder ans = new StringBuilder();
+                        ans.Append("设置完毕，当前战斗效能");
+                        ans.Append(userManager.TeamAttack(e.FromQQ.Id.ToString()));
+                        e.FromGroup.SendGroupMessage(ans);
+                        return;
+                }
+                
+            }
 
             if (e.Message.Text.Contains(CQApi.CQCode_At(e.CQApi.GetLoginQQ()).ToString()))
             {
@@ -201,9 +314,11 @@ namespace com.girlsfrontline.demo.Code
                     "添加卡片 绍沙 4 绍沙M1915，向您报到。\n" +
                     "星级范围2-5\n"+
                     "[我的卡牌] 查看拥有的卡牌\n" +
-                    "[删除卡牌 名称]删除卡片\n" +
+                    "[删除卡牌 id]删除卡片\n" +
                     "例如：删除卡牌 抽卡机\n" +
-                    "[发起对战 @某人]向某人发起对战\n");
+                    "[发起对战 @某人]向某人发起对战\n" +
+                    "[设置梯队 id id id id id]设置一个梯队\n" +
+                    "[我的梯队]查看自己的梯队");
             }
 
         }
